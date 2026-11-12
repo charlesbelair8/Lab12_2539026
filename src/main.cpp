@@ -5,7 +5,7 @@
 // ---------- Choose which part runs ----------
 // Change this number to the part you are working on, then upload.
 // 3 = potentiometer, 4 = resolution, 5 = sampling, 6 = DAC, 7 = PWM, 8 = RC filter
-#define PART 7
+#define PART 8
 
 // ---------- Pin numbers ----------
 #define POT_PIN    34    // potentiometer wiper (ADC1)
@@ -32,8 +32,8 @@ const int SINE_STEPS = 8;     // points in one sine cycle
 const int STEP_DELAY = 30;     // ms between points
 
 // Part VII – PWM
-#define LED_PIN    0            // PWM channel for the LED
-const int PWM_FREQ = 5000;     // PWM frequency (Hz)
+#define LED_PIN    18            // PWM channel for the LED
+const int PWM_FREQ = 500;     // PWM frequency (Hz)
 const int PWM_RES = 8;         // 8 bits: duty 0 – 255
 
 // ---------- Part functions ----------
@@ -137,6 +137,31 @@ void partPWM()
 // Part VIII – PWM through an RC filter, read back with the ADC
 void partRC()
 {
+  int potValue = analogRead(POT_PIN);
+  int duty = map(potValue, 0, 4095, 0, 255);
+  ledcWrite(LED_PIN, duty);
+
+  // 200 fast readings of point A: keep the lowest, the highest and the total
+  int lowest = 3300;
+  int highest = 0;
+  long total = 0;
+  for (int i = 0; i < 200; i++)
+  {
+    int v = analogReadMilliVolts(LOOP_PIN);      // one reading in mV
+    if (v < lowest)  lowest = v;
+    if (v > highest) highest = v;
+    total = total + v;
+  }
+
+  int expected = duty * 3300 / 255;    // average PWM voltage in mV
+  int filtered = total / 200;           // average of the 200 readings in mV
+  int ripple = highest - lowest;        // size of the up-and-down in mV
+
+  Serial.print(">expected:");  Serial.println(expected);
+  Serial.print(">filtered:");  Serial.println(filtered);
+  Serial.print(">ripple:");    Serial.println(ripple);
+  delay(10);
+
 }
 
 void setup()
