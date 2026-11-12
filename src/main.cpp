@@ -5,7 +5,7 @@
 // ---------- Choose which part runs ----------
 // Change this number to the part you are working on, then upload.
 // 3 = potentiometer, 4 = resolution, 5 = sampling, 6 = DAC, 7 = PWM, 8 = RC filter
-#define PART 5
+#define PART 6
 
 // ---------- Pin numbers ----------
 #define POT_PIN    34    // potentiometer wiper (ADC1)
@@ -24,6 +24,12 @@ const unsigned long SAMPLE_PERIOD = 1000000 / SAMPLE_RATE;   // µs between samp
 unsigned long lastSample = 0;   // time of the last sample (µs)
 unsigned long sampleCount = 0;  // samples taken in this second
 unsigned long lastSecond = 0;   // time the count started (ms)
+
+// Part VI – DAC
+const int DAC_VALUE = 128;     // 0 – 255
+const bool DAC_SINE = false;   // false = Step 1, true = Step 2 (sine wave)
+const int SINE_STEPS = 32;     // points in one sine cycle
+const int STEP_DELAY = 30;     // ms between points
 
 // ---------- Part functions ----------
 // Part III – read the potentiometer and send it to the Serial Plotter
@@ -83,6 +89,29 @@ void partSampling()
 // Part VI – DAC: a fixed voltage, then a slow sine wave read back by the ADC
 void partDAC()
 {
+  if (DAC_SINE == false)
+{
+    // Step 1 – a fixed voltage (Common Commands: "DAC Output")
+    dacWrite(DAC_PIN, DAC_VALUE);
+    float expected = DAC_VALUE * 3.3 / 255;        // 8 bits (Key Formulas)
+    Serial.print("DAC value = ");   Serial.print(DAC_VALUE);
+    Serial.print("   expected = "); Serial.print(expected, 3);  Serial.print(" V");
+    Serial.print("   ADC = ");  Serial.println(analogReadMilliVolts(LOOP_PIN));
+    delay(500);
+}
+  else
+{
+    // Step 2 – a sine wave, one point at a time
+    for (int i = 0; i < SINE_STEPS; i++)
+    {
+      int value = 128 + 127 * sin(2 * PI * i / SINE_STEPS);   // 1 – 255
+      dacWrite(DAC_PIN, value);
+      delay(STEP_DELAY);                                       // wait STEP_DELAY ms
+      Serial.print(">dac:");  Serial.println(value * 3300 / 255);
+      Serial.print(">adc:");  Serial.println(analogReadMilliVolts(LOOP_PIN));
+  }
+}
+
 }
 
 // Part VII – PWM: LED brightness follows the potentiometer
