@@ -16,7 +16,7 @@
 
 // ---------- Global variables ----------
 // Part IV – resolution
-const int ADC_BITS = 12;       // try 12, 11, 10 and 9
+const int ADC_BITS = 9;       // try 12, 11, 10 and 9
 
 // ---------- Part functions ----------
 // Part III – read the potentiometer and send it to the Serial Plotter
